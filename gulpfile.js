@@ -5,46 +5,50 @@ const del = require("del");
 const concat = require("gulp-concat");
 const rename = require('gulp-rename');
 const minify = require('gulp-minify');
+const plumber = require('gulp-plumber');
 
 gulp.task("clean", () => {
   return del(["www/**/*"], { force: true });
 });
 
 gulp.task("copy", () => {
-  gulp.src(["src/**/*.html"]).pipe(gulp.dest("www"));
+  return gulp.src(["src/**/*.html"]).pipe(gulp.dest("www"));
 });
 
 gulp.task("copyVendor", () => {
-  gulp
+  return gulp
     .src(["node_modules/babel-polyfill/dist/polyfill.min.js"])
     .pipe(gulp.dest("www/vendor"));
 });
 
-gulp.task("compile", () =>
-  gulp
+gulp.task("compile", () => {
+  return gulp
     .src("src/*.js")
+    .pipe(plumber())
     .pipe(
       babel({
         presets: ["env"]
       })
     )
     .pipe(concat("all.js"))
+    .pipe(plumber.stop())
     .pipe(gulp.dest("www"))
-);
+  });
 
 gulp.task("cleanIndex", () => {
-  return del(["www/index*"], { force: false });
+  return del(["www/index*"], { force: true });
 });
 
 gulp.task("copyIndex", () => {
-  gulp
+  return gulp
     .src(["src/index-prod.html"])
     .pipe(rename('index.html'))
     .pipe(gulp.dest("www"));
 });
 
 gulp.task('compress', () => {
-  gulp.src('www/all.js')
+  return gulp.src('www/all.js')
+  .pipe(plumber())
     .pipe(minify({
         ext:{
             src:'-debug.js',
@@ -53,6 +57,7 @@ gulp.task('compress', () => {
         exclude: ['tasks'],
         ignoreFiles: ['.combo.js', '-min.js']
     }))
+    .pipe(plumber.stop())
     .pipe(gulp.dest('www'))
 });
 
